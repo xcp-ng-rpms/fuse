@@ -1,0 +1,50 @@
+From 3a2bd4da6b0b713276528d0c818f9e7be515e8ec Mon Sep 17 00:00:00 2001
+From: "Ratna_Bolla@dell.com" <Ratna_Bolla@dell.com>
+Date: Mon, 4 Feb 2013 18:30:14 +0100
+Subject: [PATCH] libfuse: fix crash in unlock_path()
+
+Patch by Ratna Manoj.
+
+queue_element_unlock() should set ->first_locked and ->second_locked to false.
+
+Discovered with 'fs_racer'.  The assert(wnode->treelock == TREELOCK_WRITE) in
+unlock_path() was hit within minutes.
+
+Miklos: simplified patch
+---
+ ChangeLog  | 4 ++++
+ lib/fuse.c | 2 ++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/ChangeLog b/ChangeLog
+index dbd10e85ebf8..076bcaf54490 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,7 @@
++2013-02-04  Miklos Szeredi <miklos@szeredi.hu>
++
++	* libfuse: fix crash in unlock_path().  Patch by Ratna Manoj
++
+ 2012-10-01  Miklos Szeredi <miklos@szeredi.hu>
+ 
+ 	* Released 2.9.2
+diff --git a/lib/fuse.c b/lib/fuse.c
+index 599a587fbe60..1917346c759d 100644
+--- a/lib/fuse.c
++++ b/lib/fuse.c
+@@ -1021,10 +1021,12 @@ static void queue_element_unlock(struct fuse *f, struct lock_queue_element *qe)
+ 	if (qe->first_locked) {
+ 		wnode = qe->wnode1 ? *qe->wnode1 : NULL;
+ 		unlock_path(f, qe->nodeid1, wnode, NULL);
++		qe->first_locked = false;
+ 	}
+ 	if (qe->second_locked) {
+ 		wnode = qe->wnode2 ? *qe->wnode2 : NULL;
+ 		unlock_path(f, qe->nodeid2, wnode, NULL);
++		qe->second_locked = false;
+ 	}
+ }
+ 
+-- 
+2.14.3
+
