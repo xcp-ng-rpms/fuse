@@ -18,6 +18,8 @@ Requires:       which
 Conflicts:      filesystem < 3
 BuildRequires:  libselinux-devel
 
+BuildRequires:  gcc
+
 Requires(preun): chkconfig
 
 %description
